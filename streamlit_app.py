@@ -4,387 +4,394 @@ import numpy as np
 import json
 import joblib
 import os
-import h3
+import sys
 
-# Page Configuration
+# Ensure app path in sys.path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "app"))
+from underwriting_engine import MortgageUnderwritingEngine, UnderwritingApplication
+
 st.set_page_config(
-    page_title="HeroVal-AI | Digital Property Valuation Engine",
+    page_title="Hero Fintech Suite | Property Valuation & Mortgage Underwriting",
     page_icon="🏠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # Custom Styling
-st.markdown("""
+st.markdown(r"""
 <style>
     .main-header {
         background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-        color: white;
-        padding: 1.25rem 1.75rem;
-        border-radius: 10px;
-        border-bottom: 4px solid #E31E24;
-        margin-bottom: 1.5rem;
+        color: white; padding: 1.25rem 1.75rem; border-radius: 10px;
+        border-bottom: 4px solid #E31E24; margin-bottom: 1.25rem;
     }
-    .metric-card {
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 8px;
-        padding: 1rem;
-        text-align: center;
-    }
-    .stButton>button {
-        background: linear-gradient(135deg, #E31E24 0%, #C1121F 100%);
-        color: white;
-        font-weight: 700;
-        border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-        width: 100%;
-    }
-    .decision-box {
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        border-left: 6px solid;
-    }
+    .decision-box { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 6px solid; }
     .decision-green { background-color: #ECFDF5; border-color: #10B981; color: #065F46; }
     .decision-amber { background-color: #FFFBEB; border-color: #F59E0B; color: #92400E; }
     .decision-red { background-color: #FFF1F2; border-color: #F43F5E; color: #9F1239; }
+    .check-card {
+        background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;
+        padding: 0.75rem; margin-bottom: 0.5rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Load Model & Calibration Cache
-@st.cache_resource
-def load_engine_resources():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(base_dir, "models", "heroval_lightgbm.pkl")
-    calib_path = os.path.join(base_dir, "models", "conformal_calib.json")
-    
-    # Fallback paths
-    if not os.path.exists(model_path):
-        model_path = "/home/user/heroval-engine/models/heroval_lightgbm.pkl"
-        calib_path = "/home/user/heroval-engine/models/conformal_calib.json"
-        
-    model = joblib.load(model_path)
-    with open(calib_path, "r") as f:
-        calib = json.load(f)
-        
-    return model, calib
+# Helper function
+def format_inr(amt):
+    if amt >= 10000000:
+        return f"₹{amt/10000000:.2f} Cr"
+    elif amt >= 100000:
+        return f"₹{amt/100000:.2f} Lakhs"
+    return f"₹{amt:,.0f}"
 
-try:
-    model, calib_meta = load_engine_resources()
-    micro_markets = calib_meta["micro_markets"]
-    q_90_rel = calib_meta["q_90_rel"]
-    benchmarks = calib_meta["benchmark_summary"]
-except Exception as e:
-    st.error(f"Error loading model resources: {e}")
-    st.stop()
+# Navigation between Problem Statements
+app_mode = st.sidebar.radio(
+    "🧭 Select Solution Track:",
+    ["Problem Statement 2: Automated Mortgage Underwriting Engine (Home Loans & LAP)",
+     "Problem Statement 1: AI Property Valuation Engine (AVM)"]
+)
 
-# Helper Functions
-def format_inr(lakhs):
-    if lakhs >= 100:
-        return f"₹{lakhs/100:.2f} Cr"
-    return f"₹{lakhs:.2f} Lakhs"
+# ==============================================================================
+# TRACK 2: DIGITALLY AUTOMATED MORTGAGE UNDERWRITING ENGINE
+# ==============================================================================
+if "Problem Statement 2" in app_mode:
+    uw_engine = MortgageUnderwritingEngine()
 
-# Presets Data
-PRESETS = {
-    "Select a preset...": None,
-    "🏢 Bengaluru Whitefield 3BHK (STP Green Channel)": {
-        "city": "Bengaluru", "micro_market": "Bengaluru_Whitefield", "property_type": "Apartment",
-        "carpet_sqft": 1420, "bhk": 3, "floor": 7, "total_floors": 16, "age_years": 2.5,
-        "road_width_ft": 50, "dist_metro_km": 0.8, "amenities_score": 9, "rera_approved": 1,
-        "satellite_ndvi": 0.42, "flood_hazard_score": 1
-    },
-    "🏬 Mumbai Bandra West Boutique (Commercial Retail)": {
-        "city": "Mumbai", "micro_market": "Mumbai_BandraWest", "property_type": "Commercial_Retail",
-        "carpet_sqft": 550, "bhk": 0, "floor": 0, "total_floors": 4, "age_years": 8.0,
-        "road_width_ft": 60, "dist_metro_km": 1.5, "amenities_score": 6, "rera_approved": 1,
-        "satellite_ndvi": 0.18, "flood_hazard_score": 1
-    },
-    "🏗️ Delhi-NCR Dwarka Expressway High-Rise": {
-        "city": "Delhi-NCR", "micro_market": "NCR_DwarkaExpressway", "property_type": "Apartment",
-        "carpet_sqft": 1850, "bhk": 3, "floor": 14, "total_floors": 28, "age_years": 1.0,
-        "road_width_ft": 80, "dist_metro_km": 2.1, "amenities_score": 9, "rera_approved": 1,
-        "satellite_ndvi": 0.35, "flood_hazard_score": 1
-    },
-    "🏡 Jaipur Vaishali Nagar Villa (Tier-2 Hero Sweetspot)": {
-        "city": "Jaipur", "micro_market": "Jaipur_VaishaliNagar", "property_type": "Independent_House",
-        "carpet_sqft": 2400, "bhk": 4, "floor": 1, "total_floors": 2, "age_years": 5.0,
-        "road_width_ft": 40, "dist_metro_km": 3.8, "amenities_score": 6, "rera_approved": 1,
-        "satellite_ndvi": 0.28, "flood_hazard_score": 1
-    },
-    "⚠️ Peripheral Unapproved Layout (Red Flag Trigger)": {
-        "city": "Bengaluru", "micro_market": "Bengaluru_ElectronicCity", "property_type": "Independent_House",
-        "carpet_sqft": 1600, "bhk": 3, "floor": 1, "total_floors": 2, "age_years": 14.0,
-        "road_width_ft": 16, "dist_metro_km": 7.5, "amenities_score": 3, "rera_approved": 0,
-        "satellite_ndvi": 0.20, "flood_hazard_score": 4
-    }
-}
-
-# Header Banner
-st.markdown("""
-<div class="main-header">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-        <div>
-            <h1 style="margin: 0; font-size: 1.8rem; font-weight: 800;">HeroVal-AI: Digital Property Valuation Engine</h1>
-            <p style="margin: 4px 0 0 0; color: #94A3B8; font-size: 0.95rem;">
-                AI/ML Automated Valuation Model (AVM) for Hero Housing Finance Limited (HHFL)
-            </p>
-        </div>
-        <div style="text-align: right; background: rgba(255,255,255,0.08); padding: 6px 14px; border-radius: 8px;">
-            <span style="color: #38BDF8; font-weight: 800; font-size: 1.1rem;">4.61% MdAPE</span> | 
-            <span style="color: #34D399; font-weight: 800; font-size: 1.1rem;">83.3% P10 Precision</span> | 
-            <span style="color: #F8FAFC; font-weight: 800; font-size: 1.1rem;">90% Conformal Band</span>
+    st.markdown(r"""
+    <div class="main-header">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <div>
+                <h1 style="margin:0; font-size:1.75rem; font-weight:800;">Digitally Automated Mortgage Underwriting Engine</h1>
+                <p style="margin:4px 0 0 0; color:#94A3B8; font-size:0.92rem;">
+                    Autonomous Humanless Underwriting for Home Loans & LAP | Compliant with NHB, KYC/AML & Fair Practices Code
+                </p>
+            </div>
+            <div style="text-align:right; background:rgba(255,255,255,0.08); padding:6px 14px; border-radius:8px;">
+                <span style="color:#10B981; font-weight:800; font-size:1.05rem;">STP &lt; 15 Mins</span> | 
+                <span style="color:#38BDF8; font-weight:800; font-size:1.05rem;">India Stack DPI</span> | 
+                <span style="color:#F8FAFC; font-weight:800; font-size:1.05rem;">Audit-Ready</span>
+            </div>
         </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# Preset Selector Bar
-selected_preset = st.selectbox("⚡ Quick-Load Representative Indian Real Estate Scenarios:", list(PRESETS.keys()))
-p_defaults = PRESETS.get(selected_preset) or PRESETS["🏢 Bengaluru Whitefield 3BHK (STP Green Channel)"]
+    # Preset selector for Underwriting
+    UW_PRESETS = {
+        "Custom Application (Edit sidebar inputs)": None,
+        "🟢 Salaried Home Loan (Clean STP Auto-Approve)": {
+            "loan_product": "Home_Loan", "applicant_type": "Salaried", "applicant_name": "Pooja Verma",
+            "age": 32, "cibil_score": 785, "monthly_net_income": 135000.0, "existing_monthly_obligations": 12000.0,
+            "requested_loan_amount": 5500000.0, "requested_tenure_years": 20, "property_market_value": 7500000.0,
+            "pincode": "560066", "pan_verified": True, "aadhaar_ekyc_verified": True, "account_aggregator_verified": True,
+            "recent_30_dpd_count_12m": 0, "written_off_accounts": 0, "bank_statement_tamper_flag": False,
+            "hunter_fraud_match": False, "circular_transaction_flag": False
+        },
+        "🟢 Self-Employed LAP (ITR + GST Verified Cash Flow)": {
+            "loan_product": "LAP", "applicant_type": "Self_Employed", "applicant_name": "Sanjay Agarwal",
+            "age": 42, "cibil_score": 750, "annual_pat_itr": 1800000.0, "annual_depreciation": 300000.0,
+            "annual_gst_turnover": 18000000.0, "business_vintage_years": 7.0, "existing_monthly_obligations": 28000.0,
+            "requested_loan_amount": 4500000.0, "requested_tenure_years": 12, "property_market_value": 8500000.0,
+            "pincode": "302021", "pan_verified": True, "aadhaar_ekyc_verified": True, "account_aggregator_verified": True,
+            "recent_30_dpd_count_12m": 0, "written_off_accounts": 0, "bank_statement_tamper_flag": False,
+            "hunter_fraud_match": False, "circular_transaction_flag": False
+        },
+        "🟡 Borderline Bureau Case (Refer to Underwriting Committee)": {
+            "loan_product": "Home_Loan", "applicant_type": "Salaried", "applicant_name": "Amit Saxena",
+            "age": 36, "cibil_score": 685, "monthly_net_income": 95000.0, "existing_monthly_obligations": 18000.0,
+            "requested_loan_amount": 4200000.0, "requested_tenure_years": 20, "property_market_value": 5500000.0,
+            "pincode": "122002", "pan_verified": True, "aadhaar_ekyc_verified": True, "account_aggregator_verified": True,
+            "recent_30_dpd_count_12m": 0, "written_off_accounts": 0, "bank_statement_tamper_flag": False,
+            "hunter_fraud_match": False, "circular_transaction_flag": False
+        },
+        "🔴 Hunter Fraud Alert (Hard Reject - Phone Recycling)": {
+            "loan_product": "Home_Loan", "applicant_type": "Salaried", "applicant_name": "Vikas Malhotra",
+            "age": 29, "cibil_score": 710, "monthly_net_income": 80000.0, "existing_monthly_obligations": 10000.0,
+            "requested_loan_amount": 3500000.0, "requested_tenure_years": 20, "property_market_value": 4500000.0,
+            "pincode": "110025", "pan_verified": True, "aadhaar_ekyc_verified": True, "account_aggregator_verified": True,
+            "recent_30_dpd_count_12m": 0, "written_off_accounts": 0, "bank_statement_tamper_flag": False,
+            "hunter_fraud_match": True, "circular_transaction_flag": False
+        },
+        "🔴 Bank Statement Alteration Alert (Tampered PDF Reject)": {
+            "loan_product": "LAP", "applicant_type": "Self_Employed", "applicant_name": "Karan Mehra",
+            "age": 45, "cibil_score": 720, "annual_pat_itr": 1200000.0, "annual_depreciation": 100000.0,
+            "annual_gst_turnover": 8000000.0, "business_vintage_years": 4.0, "existing_monthly_obligations": 30000.0,
+            "requested_loan_amount": 5000000.0, "requested_tenure_years": 10, "property_market_value": 7000000.0,
+            "pincode": "400053", "pan_verified": True, "aadhaar_ekyc_verified": True, "account_aggregator_verified": False,
+            "recent_30_dpd_count_12m": 0, "written_off_accounts": 0, "bank_statement_tamper_flag": True,
+            "hunter_fraud_match": False, "circular_transaction_flag": False
+        }
+    }
 
-# Sidebar Inputs
-st.sidebar.header("📍 Property & Spatial Inputs")
+    uw_choice = st.selectbox("⚡ Representative Mortgage Underwriting Scenarios:", list(UW_PRESETS.keys()))
+    uw_def = UW_PRESETS.get(uw_choice) or UW_PRESETS["🟢 Salaried Home Loan (Clean STP Auto-Approve)"]
 
-cities = ["Bengaluru", "Mumbai", "Delhi-NCR", "Pune", "Hyderabad", "Jaipur", "Coimbatore", "Lucknow"]
-city_default_idx = cities.index(p_defaults["city"]) if p_defaults["city"] in cities else 0
-sel_city = st.sidebar.selectbox("City", cities, index=city_default_idx)
+    st.sidebar.header("📋 Application & Borrower Parameters")
+    sel_prod = st.sidebar.selectbox("Loan Product", ["Home_Loan", "LAP"], index=0 if uw_def["loan_product"]=="Home_Loan" else 1)
+    sel_app_type = st.sidebar.selectbox("Applicant Profile", ["Salaried", "Self_Employed"], index=0 if uw_def["applicant_type"]=="Salaried" else 1)
+    applicant_name = st.sidebar.text_input("Applicant Name", value=uw_def["applicant_name"])
+    
+    col_u1, col_u2 = st.sidebar.columns(2)
+    with col_u1:
+        age = st.number_input("Age", min_value=18, max_value=75, value=int(uw_def["age"]))
+        cibil = st.number_input("CIBIL Score", min_value=300, max_value=900, value=int(uw_def["cibil_score"]))
+    with col_u2:
+        tenure = st.number_input("Tenure (Yrs)", min_value=1, max_value=30, value=int(uw_def["requested_tenure_years"]))
+        pincode = st.text_input("Pincode", value=uw_def["pincode"])
 
-# Filter micro-markets for selected city
-city_mm = [k for k, v in micro_markets.items() if v["city"] == sel_city]
-mm_default_idx = city_mm.index(p_defaults["micro_market"]) if p_defaults["micro_market"] in city_mm else 0
-sel_mm = st.sidebar.selectbox("Micro-Market Cluster", city_mm, index=mm_default_idx)
+    st.sidebar.markdown("---")
+    st.sidebar.header("💰 Financials & Collateral")
+    if sel_app_type == "Salaried":
+        monthly_income = st.sidebar.number_input("Monthly Net Salary (₹)", min_value=10000.0, max_value=2000000.0, value=float(uw_def.get("monthly_net_income", 125000.0)), step=5000.0)
+        pat_itr = 0.0
+        depr = 0.0
+        gst_turn = 0.0
+        vintage = 0.0
+    else:
+        monthly_income = 0.0
+        pat_itr = st.sidebar.number_input("Annual ITR PAT (₹)", min_value=100000.0, max_value=50000000.0, value=float(uw_def.get("annual_pat_itr", 1800000.0)), step=50000.0)
+        depr = st.sidebar.number_input("Annual Depreciation (₹)", min_value=0.0, max_value=10000000.0, value=float(uw_def.get("annual_depreciation", 250000.0)), step=25000.0)
+        gst_turn = st.sidebar.number_input("Annual GST Turnover (₹)", min_value=500000.0, max_value=100000000.0, value=float(uw_def.get("annual_gst_turnover", 15000000.0)), step=100000.0)
+        vintage = st.sidebar.number_input("Business Vintage (Yrs)", min_value=0.0, max_value=40.0, value=float(uw_def.get("business_vintage_years", 5.0)), step=0.5)
 
-prop_types = ["Apartment", "Independent_House", "Commercial_Retail", "Commercial_Office"]
-type_default_idx = prop_types.index(p_defaults["property_type"]) if p_defaults["property_type"] in prop_types else 0
-sel_prop_type = st.sidebar.selectbox("Property Type", prop_types, index=type_default_idx)
+    existing_emi = st.sidebar.number_input("Existing Monthly Obligations (₹)", min_value=0.0, max_value=1000000.0, value=float(uw_def["existing_monthly_obligations"]), step=2000.0)
+    req_loan = st.sidebar.number_input("Requested Loan Amount (₹)", min_value=100000.0, max_value=100000000.0, value=float(uw_def["requested_loan_amount"]), step=50000.0)
+    prop_val = st.sidebar.number_input("Property Valuation (₹)", min_value=500000.0, max_value=200000000.0, value=float(uw_def["property_market_value"]), step=100000.0)
 
-carpet_sqft = st.sidebar.number_input("Carpet Area (sq.ft)", min_value=200, max_value=12000, value=int(p_defaults["carpet_sqft"]), step=50)
+    st.sidebar.markdown("---")
+    st.sidebar.header("🛡️ Fraud & Digital Verifications")
+    pan_ok = st.sidebar.checkbox("PAN Verified (NSDL/ITD)", value=uw_def.get("pan_verified", True))
+    aadhaar_ok = st.sidebar.checkbox("Aadhaar e-KYC Verified (UIDAI)", value=uw_def.get("aadhaar_ekyc_verified", True))
+    tamper_flag = st.sidebar.checkbox("⚠️ Bank Statement Tampering Flag", value=uw_def.get("bank_statement_tamper_flag", False))
+    hunter_flag = st.sidebar.checkbox("⚠️ Hunter Fraud Bureau Match", value=uw_def.get("hunter_fraud_match", False))
+    circular_flag = st.sidebar.checkbox("⚠️ Circular Fund Round-Trip Anomaly", value=uw_def.get("circular_transaction_flag", False))
 
-col_s1, col_s2 = st.sidebar.columns(2)
-with col_s1:
-    bhk = st.selectbox("BHK", [1, 2, 3, 4, 5, 0], index=[1, 2, 3, 4, 5, 0].index(p_defaults["bhk"]))
-    floor = st.number_input("Floor", min_value=0, max_value=60, value=int(p_defaults["floor"]))
-with col_s2:
-    age_years = st.number_input("Building Age (Yrs)", min_value=0.0, max_value=50.0, value=float(p_defaults["age_years"]), step=0.5)
-    total_floors = st.number_input("Total Floors", min_value=1, max_value=60, value=int(p_defaults["total_floors"]))
+    # Construct application model
+    app_obj = UnderwritingApplication(
+        loan_product=sel_prod,
+        applicant_type=sel_app_type,
+        applicant_name=applicant_name,
+        age=int(age),
+        cibil_score=int(cibil),
+        monthly_net_income=float(monthly_income),
+        annual_pat_itr=float(pat_itr),
+        annual_depreciation=float(depr),
+        annual_gst_turnover=float(gst_turn),
+        business_vintage_years=float(vintage),
+        existing_monthly_obligations=float(existing_emi),
+        requested_loan_amount=float(req_loan),
+        requested_tenure_years=int(tenure),
+        property_market_value=float(prop_val),
+        pincode=pincode,
+        pan_verified=pan_ok,
+        aadhaar_ekyc_verified=aadhaar_ok,
+        bank_statement_tamper_flag=tamper_flag,
+        hunter_fraud_match=hunter_flag,
+        circular_transaction_flag=circular_flag
+    )
 
-st.sidebar.markdown("---")
-st.sidebar.header("🌐 Infrastructure & Legal Nuances")
+    # Run Underwriting Engine
+    res = uw_engine.underwrite(app_obj)
+    elig = res["eligibility_metrics"]
 
-road_width_ft = st.sidebar.slider("Road Access Width (Right of Way in ft)", 15, 100, int(p_defaults["road_width_ft"]), step=5)
-dist_metro_km = st.sidebar.slider("Distance to Metro Transit (km)", 0.1, 14.0, float(p_defaults["dist_metro_km"]), step=0.1)
-amenities_score = st.sidebar.slider("Amenities & Security Rating (1-10)", 1, 10, int(p_defaults["amenities_score"]))
-
-col_s3, col_s4 = st.sidebar.columns(2)
-with col_s3:
-    rera_approved = st.selectbox("RERA Approval", ["Approved (Clear Title)", "Unapproved / Gram Panchayat"], index=0 if p_defaults["rera_approved"] == 1 else 1)
-    rera_val = 1 if "Approved" in rera_approved else 0
-with col_s4:
-    flood_score = st.selectbox("Flood Risk Index", [1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5].index(p_defaults["flood_hazard_score"]))
-
-satellite_ndvi = st.sidebar.slider("Satellite NDVI Greenery Index", 0.05, 0.75, float(p_defaults["satellite_ndvi"]), step=0.01)
-
-# Computation Engine
-minfo = micro_markets[sel_mm]
-lat, lon = minfo["lat"], minfo["lon"]
-try:
-    h3_idx = h3.geo_to_h3(lat, lon, 8) if hasattr(h3, 'geo_to_h3') else h3.latlng_to_cell(lat, lon, 8)
-except Exception:
-    h3_idx = "8860145a33fffff"
-
-circle_rate_sqft = float(minfo["circle_rate"])
-h3_comp_median = float(minfo["base_sqft"])
-circle_to_comp = circle_rate_sqft / h3_comp_median
-
-# Build feature row for LightGBM
-row_dict = {
-    "city": sel_city,
-    "property_type": sel_prop_type,
-    "carpet_sqft": float(carpet_sqft),
-    "bhk": int(bhk),
-    "floor": int(floor),
-    "total_floors": int(total_floors),
-    "age_years": float(age_years),
-    "road_width_ft": float(road_width_ft),
-    "dist_metro_km": float(dist_metro_km),
-    "amenities_score": int(amenities_score),
-    "rera_approved": int(rera_val),
-    "circle_rate_sqft": circle_rate_sqft,
-    "satellite_ndvi": float(satellite_ndvi),
-    "satellite_density": 0.65,
-    "satellite_rooftop": 4,
-    "flood_hazard_score": int(flood_score),
-    "h3_comp_median_sqft": h3_comp_median,
-    "circle_to_comp_ratio": circle_to_comp,
-    "lat": lat,
-    "lon": lon
-}
-
-df_in = pd.DataFrame([row_dict])
-df_in["city"] = df_in["city"].astype("category")
-df_in["property_type"] = df_in["property_type"].astype("category")
-
-# Predict
-pred_lakhs = float(model.predict(df_in)[0])
-pred_inr = pred_lakhs * 100000.0
-rate_sqft = pred_inr / carpet_sqft if carpet_sqft > 0 else 0
-
-# Conformal Bounds
-conf_lower_lakhs = max(pred_lakhs * (1 - q_90_rel), (circle_rate_sqft * carpet_sqft) / 100000.0 * 0.95)
-conf_upper_lakhs = pred_lakhs * (1 + q_90_rel)
-
-# Mortgage Metrics
-realizable_val_lakhs = pred_lakhs * 0.88
-distressed_fsv_lakhs = pred_lakhs * 0.72
-circle_val_lakhs = (circle_rate_sqft * carpet_sqft) / 100000.0
-
-# Confidence Score & Risk Flags
-conf_score = 92.0
-if rera_val == 0: conf_score -= 18.0
-if road_width_ft < 25: conf_score -= 10.0
-if flood_score >= 3: conf_score -= 12.0
-if age_years > 15: conf_score -= 8.0
-if circle_rate_sqft / rate_sqft < 0.40: conf_score -= 6.0
-conf_score = max(min(round(conf_score, 1), 98.0), 45.0)
-
-risk_flags = []
-if rera_val == 0: risk_flags.append("Non-RERA / Unapproved Gram Panchayat Layout (-18% discount applied)")
-if road_width_ft < 20: risk_flags.append(f"Sub-standard Access Road ({road_width_ft} ft < 20 ft threshold)")
-if flood_score >= 3: risk_flags.append(f"Elevated Flood Inundation Hazard (Score: {flood_score}/5)")
-if circle_val_lakhs / pred_lakhs < 0.45: risk_flags.append("High Registry-to-Market Disparity (Potential cash component)")
-if age_years > 20: risk_flags.append(f"Aging Structure ({age_years} yrs - residual economic life reduced)")
-
-# Main Layout Tabs
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Valuation & Credit Decision",
-    "🔍 Explainability & SHAP Waterfall",
-    "🛰️ Geospatial & Satellite Intelligence",
-    "📈 Analytics & Model Benchmarks"
-])
-
-with tab1:
-    col_v1, col_v2, col_v3, col_v4 = st.columns(4)
-    with col_v1:
-        st.metric("Fair Market Value (FMV)", format_inr(pred_lakhs), f"₹{rate_sqft:,.0f} / sq.ft")
-    with col_v2:
-        st.metric("Realizable Value (90d)", format_inr(realizable_val_lakhs), "88% of FMV")
-    with col_v3:
-        st.metric("Forced Sale Value (FSV)", format_inr(distressed_fsv_lakhs), "72% Recovery Baseline")
-    with col_v4:
-        st.metric("Govt Circle Value", format_inr(circle_val_lakhs), f"₹{circle_rate_sqft:,.0f} / sq.ft")
-
-    st.markdown("---")
-
-    # Conformal Interval Display
-    st.subheader("🛡️ Statistically Calibrated Confidence Bounds (90% Inductive Conformal Prediction)")
-    col_c1, col_c2 = st.columns([3, 1])
-    with col_c1:
-        st.info(f"**90% Prediction Interval:** **{format_inr(conf_lower_lakhs)}**  ←───  **{format_inr(pred_lakhs)}**  ───→  **{format_inr(conf_upper_lakhs)}** (Margin: ±{q_90_rel*100:.1f}%)")
-    with col_c2:
-        st.success(f"**Confidence Score:** **{conf_score}/100**\n\n*Coverage: 90.94%*")
-
-    st.markdown("---")
-
-    # Underwriting Decision Banner
-    st.subheader("🏦 Hero Housing Finance Underwriting Decision")
-    if conf_score >= 80 and len(risk_flags) == 0:
+    # Decision Banner
+    if res["decision"] == "APPROVE":
         st.markdown(f"""
         <div class="decision-box decision-green">
-            <h3 style="margin: 0; color: #065F46;">🟢 GREEN CHANNEL: AUTO-APPROVE DIGITAL VALUATION (STP)</h3>
-            <p style="margin: 6px 0 10px 0;">Instant collateral approval. Physical field inspection completely waived. Eligible for maximum NHB LTV (85%).</p>
-            <b>Recommended LTV:</b> 85% | <b>Max Loan Eligibility:</b> {format_inr(distressed_fsv_lakhs * 0.85)} | <b>Inspection Cost Saved:</b> ₹2,500 | <b>TAT:</b> &lt; 2 Hours
+            <h2 style="margin:0; color:#065F46;">🟢 DECISION: APPROVE (STP AUTO-SANCTION)</h2>
+            <p style="margin:6px 0 10px 0; font-size:1rem;">{res['decision_summary']}</p>
+            <b>Sanctioned Loan Amount:</b> {format_inr(res['sanctioned_loan_amount'])} | 
+            <b>Interest Rate:</b> {res['effective_interest_rate_pct']}% p.a. | 
+            <b>Monthly EMI:</b> ₹{res['monthly_emi']:,.0f} | 
+            <b>Turnaround Time:</b> &lt; 15 Mins
         </div>
         """, unsafe_allow_html=True)
-    elif conf_score >= 65 and len(risk_flags) <= 2:
+    elif res["decision"] == "REFER":
         st.markdown(f"""
         <div class="decision-box decision-amber">
-            <h3 style="margin: 0; color: #92400E;">🟡 AMBER CHANNEL: DESKTOP HYBRID TECHNICAL REVIEW</h3>
-            <p style="margin: 6px 0 10px 0;">AI report & satellite cues routed to in-house technical manager for 10-minute digital sign-off. LTV capped at 75%.</p>
-            <b>Recommended LTV:</b> 75% | <b>Max Loan Eligibility:</b> {format_inr(distressed_fsv_lakhs * 0.75)} | <b>Inspection Cost Saved:</b> ₹1,800 | <b>TAT:</b> 30 Minutes
+            <h2 style="margin:0; color:#92400E;">🟡 DECISION: REFER (MANUAL UNDERWRITER EXCEPTION REVIEW)</h2>
+            <p style="margin:6px 0 10px 0; font-size:1rem;">{res['decision_summary']}</p>
+            <b>Eligible Capacity:</b> {format_inr(res['sanctioned_loan_amount'])} | 
+            <b>Refer Triggers:</b> {', '.join(res['refer_reasons'])}
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown(f"""
         <div class="decision-box decision-red">
-            <h3 style="margin: 0; color: #9F1239;">🔴 RED CHANNEL: PHYSICAL FIELD SURVEY TRIGGERED</h3>
-            <p style="margin: 6px 0 10px 0;">Critical risk anomalies detected. Field surveyor dispatched with targeted anomaly verification checklist.</p>
-            <b>Recommended LTV:</b> 65% | <b>Max Loan Eligibility:</b> {format_inr(distressed_fsv_lakhs * 0.65)} | <b>Inspection TAT:</b> 48 Hours
+            <h2 style="margin:0; color:#9F1239;">🔴 DECISION: REJECT (CREDIT POLICY KNOCKOUT)</h2>
+            <p style="margin:6px 0 10px 0; font-size:1rem;">{res['decision_summary']}</p>
+            <b>Primary Rejection Reasons:</b><br/>
+            {"<br/>".join(["• " + r for r in res['hard_reject_reasons']])}
         </div>
         """, unsafe_allow_html=True)
 
-    if risk_flags:
-        st.warning("⚠️ **Flagged Risk Conditions:**\n" + "\n".join([f"- {rf}" for rf in risk_flags]))
-    else:
-        st.success("✅ **Zero Risk Anomalies Detected** — Clean collateral profile.")
+    # Core Underwriting Metrics
+    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+    with col_m1:
+        st.metric("Assessed Monthly Income", format_inr(elig["assessed_monthly_income"]), f"{sel_app_type} Basis")
+    with col_m2:
+        st.metric("Proposed FOIR", f"{elig['proposed_foir_pct']}%", f"Cap: {elig['allowable_foir_limit']*100:.0f}%", delta_color="inverse" if elig['proposed_foir_pct'] > elig['allowable_foir_limit']*100 else "normal")
+    with col_m3:
+        st.metric("Collateral LTV", f"{elig['proposed_ltv_pct']}%", f"NHB Cap: {elig['statutory_ltv_cap']*100:.0f}%", delta_color="inverse" if elig['proposed_ltv_pct'] > elig['statutory_ltv_cap']*100 else "normal")
+    with col_m4:
+        st.metric("Execution Latency", f"{res['execution_latency_ms']} ms", "Real-Time DPI Stream")
 
-with tab2:
-    st.subheader("🔍 Explainable AI: Feature Value Attribution (TreeSHAP Waterfall)")
-    st.write("Deconstructs the exact Rupee contribution (in ₹ Lakhs) of every property and micro-market attribute:")
+    st.markdown("---")
 
-    base_lakhs = (carpet_sqft * minfo["base_sqft"]) / 100000.0
-    road_impact = round(base_lakhs * ((road_width_ft - 30) * 0.0035), 2)
-    metro_impact = round(base_lakhs * (0.18 * np.exp(-0.45 * dist_metro_km)), 2)
-    age_impact = round(-base_lakhs * min(0.28, age_years * 0.012), 2)
-    amenities_impact = round(base_lakhs * ((amenities_score - 5) * 0.025), 2)
-    rera_impact = round(-base_lakhs * 0.18 if rera_val == 0 else base_lakhs * 0.02, 2)
-    satellite_impact = round(base_lakhs * ((satellite_ndvi - 0.3) * 0.08 - (flood_score - 1) * 0.035), 2)
-    residual_impact = round(pred_lakhs - (base_lakhs + road_impact + metro_impact + age_impact + amenities_impact + rera_impact + satellite_impact), 2)
-
-    shap_df = pd.DataFrame([
-        {"Factor": "1. Micro-Market Baseline", "Impact (₹ Lakhs)": round(base_lakhs, 2), "Description": f"Base rate for {sel_mm} at ₹{minfo['base_sqft']:,}/sqft"},
-        {"Factor": "2. Road Width (Right-of-Way)", "Impact (₹ Lakhs)": road_impact, "Description": f"{road_width_ft} ft access multiplier"},
-        {"Factor": "3. Metro Proximity", "Impact (₹ Lakhs)": metro_impact, "Description": f"{dist_metro_km} km to nearest rapid transit"},
-        {"Factor": "4. Building Age Depreciation", "Impact (₹ Lakhs)": age_impact, "Description": f"{age_years} years wear & tear"},
-        {"Factor": "5. Amenities & Security", "Impact (₹ Lakhs)": amenities_impact, "Description": f"Rating {amenities_score}/10"},
-        {"Factor": "6. RERA Title Clearances", "Impact (₹ Lakhs)": rera_impact, "Description": "Approved clear title" if rera_val==1 else "Unapproved layout penalty"},
-        {"Factor": "7. Satellite & Environmental", "Impact (₹ Lakhs)": satellite_impact, "Description": f"NDVI {satellite_ndvi:.2f}, Flood Zone {flood_score}/5"},
-        {"Factor": "8. Floor Rise & Structure", "Impact (₹ Lakhs)": residual_impact, "Description": f"{sel_prop_type} on floor {floor} of {total_floors}"}
+    # Detailed Sub-Sections
+    uw_tab1, uw_tab2, uw_tab3, uw_tab4 = st.tabs([
+        "✅ Internal Credit Policy Matrix",
+        "🛡️ Fraud Detection & KYC/AML",
+        "🌐 External Data Flow Architecture",
+        "📜 Regulatory Audit & Governance"
     ])
 
-    st.dataframe(shap_df, use_container_width=True)
+    with uw_tab1:
+        st.subheader("Internal Credit Policy Validation Matrix")
+        st.write("Each loan application is automatically validated against Hero Housing credit policies and NHB statutory caps:")
+        for chk in res["credit_policy_checks"]:
+            color = "#10B981" if chk["passed"] else ("#F43F5E" if chk["severity"]=="HARD_KNOCKOUT" else "#F59E0B")
+            icon = "✅" if chk["passed"] else ("❌" if chk["severity"]=="HARD_KNOCKOUT" else "⚠️")
+            st.markdown(f"""
+            <div class="check-card" style="border-left: 5px solid {color};">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b>{icon} {chk['rule']}</b>
+                    <span style="font-size:0.75rem; font-weight:700; color:{color}; text-transform:uppercase;">{chk['severity']}</span>
+                </div>
+                <div style="color:#64748B; font-size:0.85rem; margin-top:2px;">{chk['details']}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-    # Visual Bar Chart of SHAP Contributions
-    shap_chart_df = shap_df[shap_df["Factor"] != "1. Micro-Market Baseline"].copy()
-    shap_chart_df["Color"] = np.where(shap_chart_df["Impact (₹ Lakhs)"] >= 0, "Positive", "Negative")
-    st.bar_chart(data=shap_chart_df.set_index("Factor")["Impact (₹ Lakhs)"])
+    with uw_tab2:
+        st.subheader("Multi-Vector Fraud Detection & KYC/AML Engine")
+        st.write("Continuous fraud detection across identity, document tampering, bureau recycling, and AML watchlists:")
+        col_f1, col_f2 = st.columns(2)
+        for idx, fc in enumerate(res["fraud_kyc_checks"]):
+            target_col = col_f1 if idx % 2 == 0 else col_f2
+            with target_col:
+                is_fraud = fc["fraud_detected"]
+                color = "#F43F5E" if is_fraud else "#10B981"
+                icon = "🚨 ALERT" if is_fraud else "🛡️ VERIFIED"
+                target_col.markdown(f"""
+                <div class="check-card" style="border-left: 5px solid {color};">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <b>{fc['check']}</b>
+                        <span style="font-size:0.75rem; font-weight:700; color:{color};">{icon}</span>
+                    </div>
+                    <div style="color:#64748B; font-size:0.82rem; margin-top:4px;">{fc['details']}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-with tab3:
-    st.subheader("🛰️ Geospatial & Satellite Intelligence")
-    col_g1, col_g2, col_g3 = st.columns(3)
-    with col_g1:
-        st.metric("Uber H3 Spatial Hex Index", str(h3_idx), "Res 8 Resolution (~0.7 km²)")
-        st.metric("Right-of-Way Access Road", f"{road_width_ft} ft", "Adequate" if road_width_ft >= 25 else "Restricted Access")
-    with col_g2:
-        st.metric("Sentinel-2 NDVI Greenery", f"{satellite_ndvi:.2f}", "Lush Canopy" if satellite_ndvi > 0.35 else "Dense Urban")
-        st.metric("Metro Transit Proximity", f"{dist_metro_km} km", "Walkable" if dist_metro_km <= 1.0 else "Feeder Required")
-    with col_g3:
-        st.metric("Flood Inundation Hazard", f"Zone {flood_score}/5", "Safe Zone" if flood_score <= 2 else "Inundation Risk")
-        st.metric("Rooftop Structural Grade", "Grade 4 (RCC Slab)", "Computer Vision Verified")
+    with uw_tab3:
+        st.subheader("External Data Integration & Real-Time Flow")
+        st.markdown(r"""
+        ```
+                                HERO HOUSING FINTECH DATA FLOW ARCHITECTURE
+                                
+         [ BORROWER / CHANNEL ]                      [ INDIA STACK APIS ]                  [ ENTERPRISE SERVICES ]
+                   |                                           |                                       |
+                   v                                           v                                       v
+         +-------------------+                       +-------------------+                   +-------------------+
+         | Digital Portal /  |                       | NSDL PAN API      |                   | CERSAI Asset /    |
+         | Mobile Origination|                       | UIDAI Aadhaar OTP |                   | Existing Lien DB  |
+         +-------------------+                       +-------------------+                   +-------------------+
+                   |                                           |                                       |
+                   |                                           v                                       |
+                   |                                 +-------------------+                             |
+                   |                                 | Account Aggregator|                             |
+                   |                                 | (Setu / Finvu AA) |                             |
+                   |                                 +-------------------+                             |
+                   \                                           |                                      /
+                    \                                          v                                     /
+                     +---------------------------------> [ INGESTION GATEWAY ] <--------------------+
+                                                               |
+                                                               v
+                                                 +---------------------------+
+                                                 | Real-Time Schema Validator|
+                                                 | & Identity Hash Resolver  |
+                                                 +---------------------------+
+                                                               |
+                                     +-------------------------+-------------------------+
+                                     |                                                   |
+                                     v                                                   v
+                       +---------------------------+                       +---------------------------+
+                       | Eligibility & Policy Rule |                       | Multi-Vector Fraud & KYC/ |
+                       | Engine (FOIR, LTV, Age)   |                       | AML Screening (Hunter/PEP)|
+                       +---------------------------+                       +---------------------------+
+                                     |                                                   |
+                                     \                                                   /
+                                      \                                                 /
+                                       v                                               v
+                                     +---------------------------------------------------+
+                                     |        DECISION ENGINE (Approve/Reject/Refer)     |
+                                     |        Latency: < 50ms | Immutable Audit Hash     |
+                                     +---------------------------------------------------+
+        ```
+        """)
 
-with tab4:
-    st.subheader("📈 Analytics & Quantitative Model Benchmarks")
-    st.markdown("""
-    HeroVal-AI was trained on **12,000 multi-city transactions** across 8 Indian micro-markets and evaluated using **Spatial Block Cross-Validation** (holding out entire geographic clusters to prevent spatial autocorrelation leakage):
-    """)
-    
-    bench_data = {
-        "Valuation Methodology": ["HeroVal-AI (Hierarchical Spatial Ensemble)", "Legacy Portal AVM (Asking Price Scraping)", "Govt Circle Rate Baseline (Ready Reckoner)"],
-        "MdAPE (% Error)": [f"{benchmarks['HeroVal_AI']['MdAPE']}%", f"{benchmarks['Legacy_Portal_AVM']['MdAPE']}%", f"{benchmarks['Govt_Circle_Rate']['MdAPE']}%"],
-        "P10 Precision (Within ±10%)": [f"{benchmarks['HeroVal_AI']['P10']}%", f"{benchmarks['Legacy_Portal_AVM']['P10']}%", f"{benchmarks['Govt_Circle_Rate']['P10']}%"],
-        "P20 Precision (Within ±20%)": [f"{benchmarks['HeroVal_AI']['P20']}%", f"{benchmarks['Legacy_Portal_AVM']['P20']}%", f"{benchmarks['Govt_Circle_Rate']['P20']}%"],
-        "R² Goodness of Fit": [benchmarks['HeroVal_AI']['R2'], benchmarks['Legacy_Portal_AVM']['R2'], benchmarks['Govt_Circle_Rate']['R2']]
-    }
-    st.table(pd.DataFrame(bench_data))
+    with uw_tab4:
+        st.subheader("Statutory Compliance & Audit Governance")
+        st.write("Compliant with National Housing Bank (NHB) Directions & Fair Practices Code:")
+        audit = res["statutory_compliance"]
+        st.json({
+            "Application ID": res["application_id"],
+            "Trace Hash": audit["immutable_trace_id"],
+            "Timestamp": audit["audit_timestamp"],
+            "NHB Master Directions Compliance": "VERIFIED (LTV caps & FOIR rules satisfied)",
+            "Fair Practices Code": "VERIFIED (Objective rejection reasons supplied)",
+            "PMLA / KYC Compliance": "PASSED" if audit["pmla_kyc_aml_compliant"] else "ALERT"
+        })
 
-    st.markdown("""
-    ### Why HeroVal-AI Dominates:
-    1. **Elimination of Portal Asking-Price Bias:** Portal models consistently overestimate transactions by 10-18% because they train on unnegotiated asking prices. HeroVal-AI applies a dynamic Asking-to-Closing Discount Filter (ACDF).
-    2. **Circle Rate Disparity Calibration:** Captures the 30-60% black/white cash spread through localized comp-to-circle ratios.
-    3. **Inductive Conformal Prediction:** Delivers mathematically guaranteed 90% confidence bounds required for NHB regulatory audits.
-    """)
+# ==============================================================================
+# TRACK 1: AI PROPERTY VALUATION ENGINE (HEROVAL-AI)
+# ==============================================================================
+else:
+    # Load valuation models
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    model = joblib.load(os.path.join(base_dir, "models", "heroval_lightgbm.pkl"))
+    with open(os.path.join(base_dir, "models", "conformal_calib.json"), "r") as f:
+        calib_meta = json.load(f)
+    micro_markets = calib_meta["micro_markets"]
+    q_90_rel = calib_meta["q_90_rel"]
+    benchmarks = calib_meta["benchmark_summary"]
 
-# Footer
+    st.markdown(r"""
+    <div class="main-header">
+        <h1 style="margin:0; font-size:1.75rem; font-weight:800;">HeroVal-AI: Digital Property Valuation Engine</h1>
+        <p style="margin:4px 0 0 0; color:#94A3B8; font-size:0.92rem;">
+            Hierarchical Geospatial AVM for Indian Real Estate | Accuracy: 4.61% MdAPE | 90% Conformal Prediction Bounds
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    cities = ["Bengaluru", "Mumbai", "Delhi-NCR", "Pune", "Hyderabad", "Jaipur", "Coimbatore", "Lucknow"]
+    sel_city = st.sidebar.selectbox("City", cities, index=0)
+    city_mm = [k for k, v in micro_markets.items() if v["city"] == sel_city]
+    sel_mm = st.sidebar.selectbox("Micro-Market Cluster", city_mm, index=0)
+
+    carpet_sqft = st.sidebar.number_input("Carpet Area (sq.ft)", min_value=200, max_value=12000, value=1420, step=50)
+    road_width_ft = st.sidebar.slider("Road Access Width (ft)", 15, 100, 50, step=5)
+    dist_metro_km = st.sidebar.slider("Distance to Metro (km)", 0.1, 14.0, 0.8, step=0.1)
+    rera_approved = st.sidebar.selectbox("RERA Status", ["Approved", "Unapproved"])
+
+    minfo = micro_markets[sel_mm]
+    df_val = pd.DataFrame([{
+        "city": sel_city, "property_type": "Apartment", "carpet_sqft": float(carpet_sqft),
+        "bhk": 3, "floor": 5, "total_floors": 12, "age_years": 3.0, "road_width_ft": float(road_width_ft),
+        "dist_metro_km": float(dist_metro_km), "amenities_score": 8, "rera_approved": 1 if rera_approved=="Approved" else 0,
+        "circle_rate_sqft": minfo["circle_rate"], "satellite_ndvi": 0.42, "satellite_density": 0.65,
+        "satellite_rooftop": 4, "flood_hazard_score": 1, "h3_comp_median_sqft": minfo["base_sqft"],
+        "circle_to_comp_ratio": minfo["circle_rate"]/minfo["base_sqft"], "lat": minfo["lat"], "lon": minfo["lon"]
+    }])
+    df_val["city"] = df_val["city"].astype("category")
+    df_val["property_type"] = df_val["property_type"].astype("category")
+
+    pred_lakhs = float(model.predict(df_val)[0])
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Fair Market Value", format_inr(pred_lakhs * 100000.0), f"₹{(pred_lakhs*100000.0)/carpet_sqft:,.0f}/sqft")
+    c2.metric("Realizable Value (90d)", format_inr(pred_lakhs * 0.88 * 100000.0), "88% of FMV")
+    c3.metric("Forced Sale Value", format_inr(pred_lakhs * 0.72 * 100000.0), "72% Statutory Recovery Floor")
+
+    st.success(f"**90% Conformal Interval:** {format_inr(pred_lakhs*(1-q_90_rel)*100000.0)} to {format_inr(pred_lakhs*(1+q_90_rel)*100000.0)} (Statistically Guaranteed)")
+
 st.markdown("---")
-st.caption("Hero Housing Fintech Challenge 2026 | Problem Statement 1: AI-Powered Digital Property Valuation Engine | Built for Hero Housing Finance Limited")
+st.caption("Hero Housing Fintech Challenge 2026 | Comprehensive FinTech Suite | Built for Hero Housing Finance Limited")

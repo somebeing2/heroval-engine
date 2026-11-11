@@ -187,7 +187,7 @@ def get_micromarkets():
 @app.post("/api/v1/valuate")
 def valuate_property(req: ValuationRequest):
     try:
-        data = req.dict()
+        data = req.model_dump() if hasattr(req, "model_dump") else req.dict()
         result = engine.valuate(data)
         return result
     except Exception as e:
