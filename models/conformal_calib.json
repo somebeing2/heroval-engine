@@ -1,0 +1,228 @@
+{
+  "q_90_rel": 0.12257559646761164,
+  "q_90_abs": 28.138252373591058,
+  "benchmark_summary": {
+    "HeroVal_AI": {
+      "MdAPE": 4.61,
+      "P10": 83.28,
+      "P20": 97.94,
+      "RMSE_Lakhs": 27.39,
+      "R2": 0.9815,
+      "Conformal_90_Coverage": 90.94
+    },
+    "Legacy_Portal_AVM": {
+      "MdAPE": 14.12,
+      "P10": 0.0,
+      "P20": 100.0,
+      "RMSE_Lakhs": 40.98,
+      "R2": 0.9585
+    },
+    "Govt_Circle_Rate": {
+      "MdAPE": 39.88,
+      "P10": 1.56,
+      "P20": 6.06,
+      "RMSE_Lakhs": 128.88,
+      "R2": 0.5896
+    }
+  },
+  "feature_cols": [
+    "city",
+    "property_type",
+    "carpet_sqft",
+    "bhk",
+    "floor",
+    "total_floors",
+    "age_years",
+    "road_width_ft",
+    "dist_metro_km",
+    "amenities_score",
+    "rera_approved",
+    "circle_rate_sqft",
+    "satellite_ndvi",
+    "satellite_density",
+    "satellite_rooftop",
+    "flood_hazard_score",
+    "h3_comp_median_sqft",
+    "circle_to_comp_ratio",
+    "lat",
+    "lon"
+  ],
+  "micro_markets": {
+    "Bengaluru_Indiranagar": {
+      "city": "Bengaluru",
+      "base_sqft": 14500,
+      "circle_rate": 9200,
+      "lat": 12.9784,
+      "lon": 77.6408,
+      "infra_growth": 0.08
+    },
+    "Bengaluru_Whitefield": {
+      "city": "Bengaluru",
+      "base_sqft": 8200,
+      "circle_rate": 5800,
+      "lat": 12.9698,
+      "lon": 77.75,
+      "infra_growth": 0.12
+    },
+    "Bengaluru_Koramangala": {
+      "city": "Bengaluru",
+      "base_sqft": 15500,
+      "circle_rate": 10500,
+      "lat": 12.9352,
+      "lon": 77.6245,
+      "infra_growth": 0.07
+    },
+    "Bengaluru_ElectronicCity": {
+      "city": "Bengaluru",
+      "base_sqft": 5800,
+      "circle_rate": 4200,
+      "lat": 12.8452,
+      "lon": 77.6602,
+      "infra_growth": 0.1
+    },
+    "Bengaluru_Hebbal": {
+      "city": "Bengaluru",
+      "base_sqft": 9800,
+      "circle_rate": 6800,
+      "lat": 13.0358,
+      "lon": 77.597,
+      "infra_growth": 0.11
+    },
+    "Mumbai_BandraWest": {
+      "city": "Mumbai",
+      "base_sqft": 52000,
+      "circle_rate": 34000,
+      "lat": 19.0596,
+      "lon": 72.8295,
+      "infra_growth": 0.06
+    },
+    "Mumbai_AndheriEast": {
+      "city": "Mumbai",
+      "base_sqft": 22000,
+      "circle_rate": 15500,
+      "lat": 19.1136,
+      "lon": 72.8697,
+      "infra_growth": 0.09
+    },
+    "Mumbai_ThaneWest": {
+      "city": "Mumbai",
+      "base_sqft": 13500,
+      "circle_rate": 9800,
+      "lat": 19.2183,
+      "lon": 72.9781,
+      "infra_growth": 0.11
+    },
+    "Mumbai_NaviMumbaiVashi": {
+      "city": "Mumbai",
+      "base_sqft": 14800,
+      "circle_rate": 10800,
+      "lat": 19.0771,
+      "lon": 72.9986,
+      "infra_growth": 0.13
+    },
+    "NCR_GurugramDLF5": {
+      "city": "Delhi-NCR",
+      "base_sqft": 21000,
+      "circle_rate": 12500,
+      "lat": 28.4595,
+      "lon": 77.0944,
+      "infra_growth": 0.09
+    },
+    "NCR_DwarkaExpressway": {
+      "city": "Delhi-NCR",
+      "base_sqft": 11500,
+      "circle_rate": 6800,
+      "lat": 28.511,
+      "lon": 76.993,
+      "infra_growth": 0.16
+    },
+    "NCR_NoidaSector150": {
+      "city": "Delhi-NCR",
+      "base_sqft": 8900,
+      "circle_rate": 5400,
+      "lat": 28.435,
+      "lon": 77.482,
+      "infra_growth": 0.14
+    },
+    "Pune_Hinjawadi": {
+      "city": "Pune",
+      "base_sqft": 7400,
+      "circle_rate": 5200,
+      "lat": 18.5913,
+      "lon": 73.7389,
+      "infra_growth": 0.11
+    },
+    "Pune_Kothrud": {
+      "city": "Pune",
+      "base_sqft": 12800,
+      "circle_rate": 8900,
+      "lat": 18.5074,
+      "lon": 73.8077,
+      "infra_growth": 0.08
+    },
+    "Pune_VimanNagar": {
+      "city": "Pune",
+      "base_sqft": 11200,
+      "circle_rate": 7800,
+      "lat": 18.5679,
+      "lon": 73.9143,
+      "infra_growth": 0.09
+    },
+    "Hyderabad_Gachibowli": {
+      "city": "Hyderabad",
+      "base_sqft": 9600,
+      "circle_rate": 6400,
+      "lat": 17.4401,
+      "lon": 78.3489,
+      "infra_growth": 0.14
+    },
+    "Hyderabad_Madhapur": {
+      "city": "Hyderabad",
+      "base_sqft": 10800,
+      "circle_rate": 7200,
+      "lat": 17.4483,
+      "lon": 78.3915,
+      "infra_growth": 0.12
+    },
+    "Hyderabad_Kukatpally": {
+      "city": "Hyderabad",
+      "base_sqft": 7100,
+      "circle_rate": 4800,
+      "lat": 17.4849,
+      "lon": 78.4138,
+      "infra_growth": 0.09
+    },
+    "Jaipur_VaishaliNagar": {
+      "city": "Jaipur",
+      "base_sqft": 5600,
+      "circle_rate": 3800,
+      "lat": 26.9124,
+      "lon": 75.7423,
+      "infra_growth": 0.11
+    },
+    "Jaipur_Mansarovar": {
+      "city": "Jaipur",
+      "base_sqft": 4800,
+      "circle_rate": 3200,
+      "lat": 26.8528,
+      "lon": 75.7681,
+      "infra_growth": 0.1
+    },
+    "Coimbatore_RS_Puram": {
+      "city": "Coimbatore",
+      "base_sqft": 6900,
+      "circle_rate": 4900,
+      "lat": 11.0125,
+      "lon": 76.9472,
+      "infra_growth": 0.09
+    },
+    "Lucknow_GomtiNagar": {
+      "city": "Lucknow",
+      "base_sqft": 5900,
+      "circle_rate": 4100,
+      "lat": 26.8532,
+      "lon": 80.9984,
+      "infra_growth": 0.12
+    }
+  }
+}

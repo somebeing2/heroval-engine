@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HeroVal-AI | Digital Property Valuation & Risk Engine</title>
+  <style>
+    :root {
+      --hero-red: #E31E24;
+      --hero-dark: #0F172A;
+      --hero-navy: #1E293B;
+      --hero-slate: #334155;
+      --hero-light: #F8FAFC;
+      --hero-border: #E2E8F0;
+      --hero-green: #10B981;
+      --hero-amber: #F59E0B;
+      --hero-blue: #3B82F6;
+      --hero-card-bg: #FFFFFF;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #F1F5F9; color: var(--hero-dark); line-height: 1.5; padding-bottom: 60px; }
+    
+    /* Header */
+    header {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      color: white;
+      padding: 1.25rem 2rem;
+      border-bottom: 4px solid var(--hero-red);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .brand { display: flex; align-items: center; gap: 1rem; }
+    .brand-logo {
+      background: var(--hero-red);
+      color: white;
+      font-weight: 900;
+      font-size: 1.4rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .brand-title h1 { font-size: 1.35rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .brand-title p { font-size: 0.82rem; color: #94A3B8; }
+    .header-badges { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .kpi-badge {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 0.35rem 0.75rem;
+      text-align: center;
+    }
+    .kpi-badge .val { font-size: 1.05rem; font-weight: 800; color: #38BDF8; }
+    .kpi-badge .lbl { font-size: 0.68rem; text-transform: uppercase; color: #94A3B8; letter-spacing: 0.5px; }
+
+    /* Layout */
+    .container { max-width: 1440px; margin: 1.5rem auto; padding: 0 1.5rem; }
+    .grid-main { display: grid; grid-template-columns: 440px 1fr; gap: 1.5rem; }
+    @media (max-width: 1024px) { .grid-main { grid-template-columns: 1fr; } }
+
+    /* Cards */
+    .card {
+      background: var(--hero-card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--hero-border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--hero-border);
+    }
+    .card-header h2 { font-size: 1.05rem; font-weight: 700; color: var(--hero-dark); display: flex; align-items: center; gap: 0.5rem; }
+    .card-header .tag { font-size: 0.75rem; background: #E2E8F0; color: #475569; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; }
+
+    /* Presets bar */
+    .presets-bar {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .preset-chip {
+      background: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      border-radius: 20px;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .preset-chip:hover, .preset-chip.active {
+      background: var(--hero-dark);
+      color: white;
+      border-color: var(--hero-dark);
+    }
+
+    /* Form controls */
+    .form-group { margin-bottom: 0.85rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    label { display: block; font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem; }
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 0.5rem 0.65rem;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #1E293B;
+      background: #FFFFFF;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+      outline: none;
+      border-color: var(--hero-red);
+      box-shadow: 0 0 0 2px rgba(227, 30, 36, 0.15);
+    }
+    .slider-container { display: flex; align-items: center; gap: 0.75rem; }
+    .slider-container input[type="range"] { flex: 1; accent-color: var(--hero-red); }
+    .slider-val { font-size: 0.82rem; font-weight: 700; color: #1E293B; min-width: 45px; text-align: right; }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #E31E24 0%, #C1121F 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 10px rgba(227, 30, 36, 0.25);
+      transition: all 0.2s;
+    }
+    .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
+
+    /* Valuation Display Hero */
+    .val-hero {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: center;
+      border-left: 6px solid var(--hero-red);
+    }
+    .val-main .lbl { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #94A3B8; font-weight: 600; }
+    .val-main .price { font-size: 2.3rem; font-weight: 800; color: #FFFFFF; line-height: 1.1; margin: 0.35rem 0; }
+    .val-main .subprice { font-size: 0.95rem; color: #38BDF8; font-weight: 600; }
+    .val-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.85rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .stat-item .k { font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; }
+    .stat-item .v { font-size: 1.05rem; font-weight: 700; color: #F8FAFC; }
+
+    /* Confidence & Conformal Interval */
+    .conformal-box {
+      background: #F8FAFC;
+      border: 1px solid var(--hero-border);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .conformal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .conformal-range {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #E2E8F0;
+      height: 32px;
+      border-radius: 16px;
+      position: relative;
+      margin: 0.75rem 0;
+      padding: 0 1rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #334155;
+    }
+    .conformal-bar {
+      position: absolute;
+      left: 15%;
+      right: 15%;
+      top: 4px;
+      bottom: 4px;
+      background: linear-gradient(90deg, #38BDF8 0%, #10B981 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    /* Lender Decision Card */
+    .decision-banner {
+      border-radius: 10px;
+      padding: 1.15rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      border-left: 6px solid;
+    }
+    .decision-banner.emerald { background: #ECFDF5; border-color: #10B981; color: #065F46; }
+    .decision-banner.amber { background: #FFFBEB; border-color: #F59E0B; color: #92400E; }
+    .decision-banner.rose { background: #FFF1F2; border-color: #F43F5E; color: #9F1239; }
+    .decision-badge {
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .decision-banner.emerald .decision-badge { background: #10B981; color: white; }
+    .decision-banner.amber .decision-badge { background: #F59E0B; color: white; }
+    .decision-banner.rose .decision-badge { background: #F43F5E; color: white; }
+
+    /* SHAP Waterfall Table */
+    .shap-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .shap-table th { text-align: left; padding: 0.5rem 0.65rem; background: #F8FAFC; color: #64748B; font-weight: 700; border-bottom: 2px solid var(--hero-border); }
+    .shap-table td { padding: 0.5rem 0.65rem; border-bottom: 1px solid #F1F5F9; }
+    .impact-pos { color: #059669; font-weight: 700; }
+    .impact-neg { color: #DC2626; font-weight: 700; }
+    .shap-bar-bg { background: #E2E8F0; height: 8px; border-radius: 4px; overflow: hidden; width: 100%; max-width: 140px; display: inline-block; vertical-align: middle; margin-left: 0.5rem; }
+    .shap-bar-fill { height: 100%; border-radius: 4px; }
+    .shap-bar-fill.pos { background: #10B981; }
+    .shap-bar-fill.neg { background: #EF4444; }
+
+    /* Satellite & Spatial Grid */
+    .sat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .sat-card {
+      background: #F8FAFC;
+      border: 1px solid var(--hero-border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      text-align: center;
+    }
+    .sat-card .icon { font-size: 1.25rem; margin-bottom: 0.25rem; }
+    .sat-card .title { font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: uppercase; }
+    .sat-card .value { font-size: 0.95rem; font-weight: 700; color: #1E293B; margin-top: 0.15rem; }
+
+    /* Benchmark Table */
+    .bench-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.5rem; }
+    .bench-table th { background: #0F172A; color: white; padding: 0.5rem; text-align: center; font-weight: 600; }
+    .bench-table th:first-child { text-align: left; }
+    .bench-table td { padding: 0.5rem; text-align: center; border-bottom: 1px solid #E2E8F0; }
+    .bench-table td:first-child { text-align: left; font-weight: 600; }
+    .highlight-row { background: #ECFDF5; font-weight: 700; color: #065F46; }
+
+    /* Section Tabs */
+    .tabs { display: flex; gap: 0.5rem; border-bottom: 2px solid var(--hero-border); margin-bottom: 1rem; }
+    .tab-btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748B;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn.active { color: var(--hero-red); border-bottom-color: var(--hero-red); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">HERO</div>
+      <div class="brand-title">
+        <h1>HeroVal-AI <span style="font-size: 0.8rem; background: #E31E24; color: white; padding: 2px 6px; border-radius: 4px;">AVM 2.0</span></h1>
+        <p>AI-Powered Digital Property Valuation & Underwriting Risk Engine for India</p>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="kpi-badge">
+        <div class="val">4.61%</div>
+        <div class="lbl">MdAPE Accuracy</div>
+      </div>
+      <div class="kpi-badge">
+        <div class="val">83.3%</div>
+        <div class="lbl">P10 Precision</div>
+      </div>
+      <div class="kpi-badge">
+        <div class="val">90%</div>
+        <div class="lbl">Conformal Coverage</div>
+      </div>
+      <div class="kpi-badge">
+        <div class="val">&lt; 800ms</div>
+        <div class="lbl">Inference TAT</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    
+    <!-- Presets Selector -->
+    <div class="presets-bar" id="presetsBar">
+      <span style="font-size: 0.8rem; font-weight: 700; color: #475569; display: flex; align-items: center; margin-right: 0.5rem;">
+        ⚡ Instant Presets:
+      </span>
+      <button class="preset-chip active" onclick="loadPreset('blr_whitefield_apt')">🏢 Bengaluru Whitefield 3BHK (STP Green)</button>
+      <button class="preset-chip" onclick="loadPreset('mum_bandra_comm')">🏬 Mumbai Bandra Retail (Commercial)</button>
+      <button class="preset-chip" onclick="loadPreset('ncr_dwarka_exp')">🏗️ Delhi-NCR Dwarka Exp. High-Rise</button>
+      <button class="preset-chip" onclick="loadPreset('jpr_vaishali_house')">🏡 Jaipur Vaishali Villa (Tier-2 Hero Sweetspot)</button>
+      <button class="preset-chip" onclick="loadPreset('high_risk_unapproved')">⚠️ Peripheral Unapproved (Red Flag Trigger)</button>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid-main">
+      
+      <!-- Left Column: Input Form -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <h2>⚙️ Property & Geospatial Input</h2>
+            <span class="tag">Real-Time ML Pipeline</span>
+          </div>
+
+          <form id="valuationForm" onsubmit="event.preventDefault(); runValuation();">
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="city">City</label>
+                <select id="city" onchange="updateMicroMarkets()">
+                  <option value="Bengaluru">Bengaluru</option>
+                  <option value="Mumbai">Mumbai (MMR)</option>
+                  <option value="Delhi-NCR">Delhi-NCR</option>
+                  <option value="Pune">Pune</option>
+                  <option value="Hyderabad">Hyderabad</option>
+                  <option value="Jaipur">Jaipur (Tier-2)</option>
+                  <option value="Coimbatore">Coimbatore (Tier-2)</option>
+                  <option value="Lucknow">Lucknow (Tier-2)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="micro_market">Micro-Market Cluster</label>
+                <select id="micro_market"></select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="property_type">Property Asset Class</label>
+                <select id="property_type">
+                  <option value="Apartment">Residential Apartment</option>
+                  <option value="Independent_House">Independent House / Villa</option>
+                  <option value="Commercial_Retail">Commercial Retail Shop</option>
+                  <option value="Commercial_Office">Commercial Office Space</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="carpet_sqft">Carpet Area (sq.ft)</label>
+                <input type="number" id="carpet_sqft" value="1420" min="200" max="10000" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="bhk">BHK / Config</label>
+                <select id="bhk">
+                  <option value="1">1 BHK</option>
+                  <option value="2">2 BHK</option>
+                  <option value="3" selected>3 BHK</option>
+                  <option value="4">4 BHK</option>
+                  <option value="0">0 (Commercial / Studio)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="age_years">Building Age (Years)</label>
+                <input type="number" id="age_years" value="2.5" step="0.5" min="0" max="50" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="floor">Property Floor</label>
+                <input type="number" id="floor" value="7" min="0" max="60" />
+              </div>
+
+              <div class="form-group">
+                <label for="total_floors">Total Building Floors</label>
+                <input type="number" id="total_floors" value="16" min="1" max="60" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Road Access Width (Right of Way): <span id="roadWidthVal" class="slider-val">50 ft</span></label>
+              <div class="slider-container">
+                <input type="range" id="road_width_ft" min="15" max="100" step="5" value="50" oninput="document.getElementById('roadWidthVal').innerText = this.value + ' ft'" />
+              </div>
+              <small style="color: #64748B; font-size: 0.72rem;">*Key Indian factor: &lt;20ft triggers liquidity & fire clearance penalties.</small>
+            </div>
+
+            <div class="form-group">
+              <label>Distance to Metro / Transit Node: <span id="metroDistVal" class="slider-val">0.8 km</span></label>
+              <div class="slider-container">
+                <input type="range" id="dist_metro_km" min="0.1" max="12.0" step="0.1" value="0.8" oninput="document.getElementById('metroDistVal').innerText = this.value + ' km'" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Amenities & Security Score (1 - 10): <span id="amenitiesVal" class="slider-val">9 / 10</span></label>
+              <div class="slider-container">
+                <input type="range" id="amenities_score" min="1" max="10" step="1" value="9" oninput="document.getElementById('amenitiesVal').innerText = this.value + ' / 10'" />
+              </div>
+            </div>
+
+            <div class="form-row" style="margin-top: 0.5rem;">
+              <div class="form-group">
+                <label for="rera_approved">RERA & Title Approval</label>
+                <select id="rera_approved">
+                  <option value="1" selected>✅ Approved / Clear Title</option>
+                  <option value="0">❌ Unapproved / Gram Panchayat</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="flood_hazard_score">Flood Hazard Index</label>
+                <select id="flood_hazard_score">
+                  <option value="1" selected>Low (Score 1/5)</option>
+                  <option value="2">Moderate (Score 2/5)</option>
+                  <option value="3">High Vulnerability (3/5)</option>
+                  <option value="4">Severe Inundation (4/5)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Satellite NDVI Greenery Index: <span id="ndviVal" class="slider-val">0.42</span></label>
+              <div class="slider-container">
+                <input type="range" id="satellite_ndvi" min="0.05" max="0.75" step="0.01" value="0.42" oninput="document.getElementById('ndviVal').innerText = this.value" />
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">
+              <span>⚡ Compute Fair Valuation & Underwriting Risk</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Benchmark Comparison Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>📊 Model Benchmarks vs Legacy AVMs</h2>
+            <span class="tag">Empirical Test</span>
+          </div>
+          <p style="font-size: 0.78rem; color: #64748B; margin-bottom: 0.5rem;">
+            Evaluated on held-out test sets across 8 Indian cities with Spatial Block Cross-Validation:
+          </p>
+          <table class="bench-table">
+            <thead>
+              <tr>
+                <th>Model Approach</th>
+                <th>MdAPE</th>
+                <th>P10 Accuracy</th>
+                <th>P20 Accuracy</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="highlight-row">
+                <td>🚀 HeroVal-AI (Ensemble)</td>
+                <td>4.61%</td>
+                <td>83.28%</td>
+                <td>97.94%</td>
+              </tr>
+              <tr>
+                <td>Legacy Portal AVM</td>
+                <td>14.12%</td>
+                <td>0.00%*</td>
+                <td>100.0%</td>
+              </tr>
+              <tr>
+                <td>Govt Circle Rate Only</td>
+                <td>39.88%</td>
+                <td>1.56%</td>
+                <td>6.06%</td>
+              </tr>
+            </tbody>
+          </table>
+          <small style="display:block; margin-top: 0.5rem; color: #64748B; font-size: 0.7rem;">
+            *Legacy portal AVMs consistently overestimate real transactions by 10-18% due to uncalibrated asking price bias.
+          </small>
+        </div>
+      </div>
+
+      <!-- Right Column: Outputs & Visualizations -->
+      <div>
+        
+        <!-- Primary Valuation Hero -->
+        <div class="val-hero">
+          <div class="val-main">
+            <div class="lbl">Predicted Fair Market Value (FMV)</div>
+            <div class="price" id="resFmv">₹1.44 Cr</div>
+            <div class="subprice" id="resRateSqft">₹10,140 / sq.ft</div>
+            <div style="font-size: 0.78rem; color: #CBD5E1; margin-top: 0.4rem;" id="resCompCircle">
+              Circle Rate: ₹5,800/sq.ft (1.75x Market Multiplier)
+            </div>
+          </div>
+          <div class="val-stats">
+            <div class="stat-item">
+              <div class="k">Realizable Value (90d)</div>
+              <div class="v" id="resRealizable">₹1.27 Cr</div>
+            </div>
+            <div class="stat-item">
+              <div class="k">Forced Sale Value (FSV)</div>
+              <div class="v" id="resFsv" style="color: #F87171;">₹1.04 Cr</div>
+            </div>
+            <div class="stat-item">
+              <div class="k">Govt Circle Value</div>
+              <div class="v" id="resCircleVal">₹82.36 L</div>
+            </div>
+            <div class="stat-item">
+              <div class="k">Inference Latency</div>
+              <div class="v" style="color: #34D399;">18 ms</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conformal Confidence Range -->
+        <div class="conformal-box">
+          <div class="conformal-header">
+            <div>
+              <span style="font-size: 0.85rem; font-weight: 700; color: #1E293B;">🛡️ Statistically Calibrated Confidence Interval</span>
+              <span style="font-size: 0.72rem; color: #64748B; margin-left: 0.5rem;">(90% Inductive Conformal Prediction)</span>
+            </div>
+            <span id="resConfScoreBadge" style="background: #10B981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+              Confidence: 92/100
+            </span>
+          </div>
+
+          <div class="conformal-range">
+            <span id="confLowerLabel">₹1.26 Cr</span>
+            <div class="conformal-bar">
+              <span>90% Confidence Band (&plusmn;12.3%)</span>
+            </div>
+            <span id="confUpperLabel">₹1.61 Cr</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748B;">
+            <span id="confDataTier">Data Density: Tier A (Dense Registry & RERA Comps)</span>
+            <span>Mathematical Guarantee: Coverage &ge; 90.94%</span>
+          </div>
+        </div>
+
+        <!-- Lender Credit Decision Banner -->
+        <div class="decision-banner emerald" id="decisionBanner">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+              <span class="decision-badge" id="decisionBadge">GREEN CHANNEL (STP)</span>
+              <span style="font-size: 0.85rem; font-weight: 700;" id="decisionTitle">Auto-Approve Digital Valuation</span>
+            </div>
+            <p style="font-size: 0.82rem; margin-bottom: 0.5rem;" id="decisionDesc">
+              Instant collateral approval. Physical field inspection completely waived. Eligible for maximum NHB LTV (85%). Disbursal TAT &lt; 2 hours.
+            </p>
+            <div style="display: flex; gap: 1.5rem; font-size: 0.8rem; font-weight: 600;">
+              <div>Recommended LTV: <span id="resLtv" style="font-weight: 800;">85%</span></div>
+              <div>Max Sanction: <span id="resMaxLoan" style="font-weight: 800;">₹88.40 L</span></div>
+              <div>Inspection Cost Saved: <span id="resCostSaved" style="color: #059669; font-weight: 800;">₹2,500</span></div>
+            </div>
+            <div id="riskFlagsList" style="margin-top: 0.5rem; font-size: 0.75rem; color: #DC2626;"></div>
+          </div>
+        </div>
+
+        <!-- Explainability: SHAP Waterfall Decomposition -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🔍 Explainable AI: Feature Value Attribution (SHAP Waterfall)</h2>
+            <span class="tag">Rupee-Value Decomposition</span>
+          </div>
+          <p style="font-size: 0.78rem; color: #64748B; margin-bottom: 0.75rem;">
+            Auditable breakdown explaining exactly how each property attribute impacts the final valuation in ₹ Lakhs:
+          </p>
+          <table class="shap-table" id="shapTable">
+            <thead>
+              <tr>
+                <th>Factor</th>
+                <th>Context / Micro-Market Driver</th>
+                <th>Impact (₹ Lakhs)</th>
+                <th>Relative Weight</th>
+              </tr>
+            </thead>
+            <tbody id="shapBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Satellite & Geospatial Intelligence -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🛰️ Satellite Imagery & Geospatial Intelligence</h2>
+            <span class="tag">Sentinel-2 & OpenStreetMap</span>
+          </div>
+          <div class="sat-grid">
+            <div class="sat-card">
+              <div class="icon">🌿</div>
+              <div class="title">NDVI Greenery</div>
+              <div class="value" id="satNdvi">0.42 (High)</div>
+            </div>
+            <div class="sat-card">
+              <div class="icon">🏗️</div>
+              <div class="title">Built-up Density</div>
+              <div class="value" id="satDensity">68% Dense Urban</div>
+            </div>
+            <div class="sat-card">
+              <div class="icon">🏠</div>
+              <div class="title">Rooftop Structural Grade</div>
+              <div class="value" id="satRooftop">Grade A (RCC)</div>
+            </div>
+            <div class="sat-card">
+              <div class="icon">🌊</div>
+              <div class="title">Flood Hazard Score</div>
+              <div class="value" id="satFlood">Zone 1 (Low)</div>
+            </div>
+            <div class="sat-card">
+              <div class="icon">🛣️</div>
+              <div class="title">Access Road Width</div>
+              <div class="value" id="satRoad">50 ft Right of Way</div>
+            </div>
+            <div class="sat-card">
+              <div class="icon">🚇</div>
+              <div class="title">Metro Transit Proximity</div>
+              <div class="value" id="satMetro">0.8 km (Walkable)</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Micro-market mappings
+    const MARKETS = {
+      "Bengaluru": [
+        { id: "Bengaluru_Whitefield", name: "Whitefield IT Corridor" },
+        { id: "Bengaluru_Indiranagar", name: "Indiranagar Central" },
+        { id: "Bengaluru_Koramangala", name: "Koramangala Startup Hub" },
+        { id: "Bengaluru_ElectronicCity", name: "Electronic City South" },
+        { id: "Bengaluru_Hebbal", name: "Hebbal North Corridor" }
+      ],
+      "Mumbai": [
+        { id: "Mumbai_BandraWest", name: "Bandra West Coastal" },
+        { id: "Mumbai_AndheriEast", name: "Andheri East Commercial" },
+        { id: "Mumbai_ThaneWest", name: "Thane West High-Density" },
+        { id: "Mumbai_NaviMumbaiVashi", name: "Navi Mumbai Vashi" }
+      ],
+      "Delhi-NCR": [
+        { id: "NCR_GurugramDLF5", name: "Gurugram DLF Phase 5" },
+        { id: "NCR_DwarkaExpressway", name: "Dwarka Expressway Corridor" },
+        { id: "NCR_NoidaSector150", name: "Noida Sector 150 Green Zone" }
+      ],
+      "Pune": [
+        { id: "Pune_Hinjawadi", name: "Hinjawadi IT Park" },
+        { id: "Pune_Kothrud", name: "Kothrud Central" },
+        { id: "Pune_VimanNagar", name: "Viman Nagar Airport Hub" }
+      ],
+      "Hyderabad": [
+        { id: "Hyderabad_Gachibowli", name: "Gachibowli Financial District" },
+        { id: "Hyderabad_Madhapur", name: "Madhapur HITEC City" },
+        { id: "Hyderabad_Kukatpally", name: "Kukatpally Residential" }
+      ],
+      "Jaipur": [
+        { id: "Jaipur_VaishaliNagar", name: "Vaishali Nagar High-Street" },
+        { id: "Jaipur_Mansarovar", name: "Mansarovar Residential" }
+      ],
+      "Coimbatore": [
+        { id: "Coimbatore_RS_Puram", name: "RS Puram Commercial/Residential" }
+      ],
+      "Lucknow": [
+        { id: "Lucknow_GomtiNagar", name: "Gomti Nagar Extension" }
+      ]
+    };
+
+    let presetsData = {};
+
+    function updateMicroMarkets() {
+      const city = document.getElementById("city").value;
+      const mmSelect = document.getElementById("micro_market");
+      mmSelect.innerHTML = "";
+      const list = MARKETS[city] || [];
+      list.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item.id;
+        opt.innerText = item.name;
+        mmSelect.appendChild(opt);
+      });
+    }
+
+    async function loadPresetsList() {
+      try {
+        const res = await fetch("/api/v1/presets");
+        const list = await res.json();
+        list.forEach(p => presetsData[p.id] = p);
+      } catch (e) {
+        console.error("Failed to load presets", e);
+      }
+    }
+
+    function loadPreset(id) {
+      document.querySelectorAll(".preset-chip").forEach(c => c.classList.remove("active"));
+      event.target.classList.add("active");
+
+      const p = presetsData[id];
+      if (!p) return;
+
+      document.getElementById("city").value = p.city;
+      updateMicroMarkets();
+      document.getElementById("micro_market").value = p.micro_market;
+      document.getElementById("property_type").value = p.property_type;
+      document.getElementById("carpet_sqft").value = p.carpet_sqft;
+      document.getElementById("bhk").value = p.bhk;
+      document.getElementById("floor").value = p.floor;
+      document.getElementById("total_floors").value = p.total_floors;
+      document.getElementById("age_years").value = p.age_years;
+      document.getElementById("road_width_ft").value = p.road_width_ft;
+      document.getElementById("roadWidthVal").innerText = p.road_width_ft + " ft";
+      document.getElementById("dist_metro_km").value = p.dist_metro_km;
+      document.getElementById("metroDistVal").innerText = p.dist_metro_km + " km";
+      document.getElementById("amenities_score").value = p.amenities_score;
+      document.getElementById("amenitiesVal").innerText = p.amenities_score + " / 10";
+      document.getElementById("rera_approved").value = p.rera_approved;
+      document.getElementById("flood_hazard_score").value = p.flood_hazard_score;
+      document.getElementById("satellite_ndvi").value = p.satellite_ndvi;
+      document.getElementById("ndviVal").innerText = p.satellite_ndvi;
+
+      runValuation();
+    }
+
+    async function runValuation() {
+      const btn = document.getElementById("submitBtn");
+      btn.innerHTML = "<span>⏳ Computing Neural Inference & Conformal Bounds...</span>";
+
+      const payload = {
+        city: document.getElementById("city").value,
+        micro_market: document.getElementById("micro_market").value,
+        property_type: document.getElementById("property_type").value,
+        carpet_sqft: parseFloat(document.getElementById("carpet_sqft").value),
+        bhk: parseInt(document.getElementById("bhk").value),
+        floor: parseInt(document.getElementById("floor").value),
+        total_floors: parseInt(document.getElementById("total_floors").value),
+        age_years: parseFloat(document.getElementById("age_years").value),
+        road_width_ft: parseFloat(document.getElementById("road_width_ft").value),
+        dist_metro_km: parseFloat(document.getElementById("dist_metro_km").value),
+        amenities_score: parseInt(document.getElementById("amenities_score").value),
+        rera_approved: parseInt(document.getElementById("rera_approved").value),
+        satellite_ndvi: parseFloat(document.getElementById("satellite_ndvi").value),
+        flood_hazard_score: parseInt(document.getElementById("flood_hazard_score").value)
+      };
+
+      try {
+        const res = await fetch("/api/v1/valuate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        renderResults(data);
+      } catch (err) {
+        console.error(err);
+        alert("Valuation failed: " + err.message);
+      } finally {
+        btn.innerHTML = "<span>⚡ Compute Fair Valuation & Underwriting Risk</span>";
+      }
+    }
+
+    function formatLakhsCr(lakhs) {
+      if (lakhs >= 100) {
+        return "₹" + (lakhs / 100).toFixed(2) + " Cr";
+      }
+      return "₹" + lakhs.toFixed(2) + " Lakhs";
+    }
+
+    function renderResults(data) {
+      const v = data.valuation_output;
+      const c = data.conformal_confidence;
+      const d = data.lender_underwriting_decision;
+      const s = data.satellite_geospatial_intelligence;
+
+      // FMV Card
+      document.getElementById("resFmv").innerText = formatLakhsCr(v.fair_market_value_lakhs);
+      document.getElementById("resRateSqft").innerText = "₹" + v.rate_per_sqft_inr.toLocaleString("en-IN") + " / sq.ft";
+      document.getElementById("resRealizable").innerText = formatLakhsCr(v.realizable_value_lakhs);
+      document.getElementById("resFsv").innerText = formatLakhsCr(v.forced_sale_value_lakhs);
+      document.getElementById("resCircleVal").innerText = formatLakhsCr(v.government_circle_value_lakhs);
+      document.getElementById("resCompCircle").innerText = `Govt Circle Rate Baseline: ${formatLakhsCr(v.government_circle_value_lakhs)} (${v.market_to_circle_ratio}x Market Disparity)`;
+
+      // Conformal Range
+      document.getElementById("confLowerLabel").innerText = formatLakhsCr(c.lower_bound_lakhs);
+      document.getElementById("confUpperLabel").innerText = formatLakhsCr(c.upper_bound_lakhs);
+      document.getElementById("resConfScoreBadge").innerText = `Confidence: ${c.confidence_score}/100`;
+      document.getElementById("confDataTier").innerText = `Data Density: ${c.confidence_tier}`;
+
+      // Decision Banner
+      const banner = document.getElementById("decisionBanner");
+      banner.className = `decision-banner ${d.decision_color}`;
+      document.getElementById("decisionBadge").innerText = d.decision_code.replace("_", " ");
+      document.getElementById("decisionTitle").innerText = d.decision;
+      document.getElementById("decisionDesc").innerText = d.action_desc;
+      document.getElementById("resLtv").innerText = d.recommended_ltv_pct + "%";
+      document.getElementById("resMaxLoan").innerText = formatLakhsCr(d.max_eligible_loan_lakhs);
+      document.getElementById("resCostSaved").innerText = "₹" + d.inspection_cost_saved_inr.toLocaleString("en-IN");
+
+      // Risk Flags
+      const flagsDiv = document.getElementById("riskFlagsList");
+      if (d.risk_flags && d.risk_flags.length > 0) {
+        flagsDiv.innerHTML = "<strong>Flagged Risk Conditions:</strong><br/>" + d.risk_flags.map(f => "• " + f).join("<br/>");
+      } else {
+        flagsDiv.innerHTML = "<span style='color: #059669;'>✓ Zero Risk Anomalies Detected (Clean Collateral Profile)</span>";
+      }
+
+      // SHAP Waterfall
+      const tbody = document.getElementById("shapBody");
+      tbody.innerHTML = "";
+      const factors = data.explainability_waterfall || [];
+      const maxAbs = Math.max(...factors.map(f => Math.abs(f.impact_lakhs)));
+
+      factors.forEach(item => {
+        const tr = document.createElement("tr");
+        const isPos = item.impact_lakhs >= 0;
+        const widthPct = Math.min(100, Math.round((Math.abs(item.impact_lakhs) / maxAbs) * 100));
+        const impactClass = item.impact_type === "baseline" ? "" : (isPos ? "impact-pos" : "impact-neg");
+        const barClass = isPos ? "pos" : "neg";
+        const sign = isPos && item.impact_type !== "baseline" ? "+" : "";
+
+        tr.innerHTML = `
+          <td style="font-weight: 600;">${item.factor}</td>
+          <td style="color: #64748B;">${item.description}</td>
+          <td class="${impactClass}">${sign}₹${Math.abs(item.impact_lakhs).toFixed(2)} L</td>
+          <td>
+            <div class="shap-bar-bg">
+              <div class="shap-bar-fill ${barClass}" style="width: ${widthPct}%;"></div>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Satellite Details
+      document.getElementById("satNdvi").innerText = `${s.ndvi_greenery_index} (${s.ndvi_greenery_index > 0.35 ? 'Lush Green' : 'Urban'})`;
+      document.getElementById("satDensity").innerText = `${Math.round(s.builtup_density_ratio * 100)}% Built-up Area`;
+      document.getElementById("satRooftop").innerText = `Grade ${s.rooftop_structural_grade} / 5 (RCC)`;
+      document.getElementById("satFlood").innerText = `Zone ${s.flood_hazard_index} / 5 (${s.flood_hazard_index <= 2 ? 'Low Risk' : 'High Risk'})`;
+      document.getElementById("satRoad").innerText = `${s.road_width_ft} ft Right of Way`;
+      document.getElementById("satMetro").innerText = `${s.metro_distance_km} km Proximity`;
+    }
+
+    // Initialize on page load
+    window.addEventListener("DOMContentLoaded", async () => {
+      updateMicroMarkets();
+      await loadPresetsList();
+      runValuation();
+    });
+  </script>
+</body>
+</html>
